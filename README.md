@@ -9,7 +9,7 @@ This project explores how environmental air quality impacts plant growth by anal
 - `project2R&S.Rmd`: Main R Markdown file with data cleaning, visualization, and analysis code.
 - `project2R-S.pdf`: Final rendered PDF report with findings and visualizations.
 
-## 📊 Objectives
+##  Objectives
 
 - Clean and merge air quality and plant growth datasets.
 - Perform exploratory data analysis (EDA).
