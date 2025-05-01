@@ -1,0 +1,263 @@
+---
+title: "Project 2"
+author: "Shashota Saha & Ronit Shah"
+date: "2025-03-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr) 
+```
+#  Introduction
+
+In this project, we aim to identify the best times of day for gardening based on two main data sources:
+- Air Quality Data (`daily_44201_2024.csv`) containing ozone levels and AQI measurements.
+- Plant Growth Data (`plant_growth_data.csv`) containing sunlight hours, temperature, and plant growth milestones. 
+
+The goal is to find hours where both air quality and plant conditions are optimal.
+
+```{r , echo = TRUE, warning = FALSE , message=FALSE}
+
+```
+# Data decription for the Projects
+1.daily_44201_2024.csv:
+
+- Description: Contains daily air quality measurements including AQI and ozone levels.
+
+- Important columns: 1st Max Hour, AQI, Arithmetic Mean.
+
+- Covers hourly ozone and air quality patterns across different times of the day.
+
+2. plant_growth_data.csv:
+
+- Description: Experimental dataset on plant growth based on sunlight, temperature, and fertilizer use.
+
+- Important columns: Sunlight_Hours, Temperature, Growth_Milestone.
+
+- Used to find how environmental conditions influence plant health.
+
+```{r , echo=TRUE, warning = FALSE , message=FALSE}
+
+ 
+```
+
+
+# Application Functionality:
+This analysis includes:
+
+- Cleaning and preprocessing both datasets (dropna used to remove missing data).
+
+- Defining "good gardening hours" based on:
+
+1. Safe air quality (AQI <= 100 and Ozone between 0.030–0.070 ppm).
+
+2. Optimal plant growth conditions (Sunlight 5–8 hours, Temperature 15–30°C, Growth milestone => 1).
+
+- Classifying hours into 4 categories:
+
+1. Best for Plants and Gardeners
+
+2. Good for Plants Only
+
+3. Good for Gardeners Only
+
+4. Bad for Both
+
+- Visualizing these classifications using color-coded histograms and plots. 
+
+# Loading Data 
+```{r , echo=TRUE, warning = FALSE , message=FALSE}
+
+# Load Air Quality Data
+air_data <- read.csv('daily_44201_2024.csv', stringsAsFactors = FALSE)
+air_data <- na.omit(air_data)
+
+# Load Plant Growth Data
+plant_data <- read.csv('plant_growth_data.csv', stringsAsFactors = FALSE)
+plant_data <- na.omit(plant_data)
+
+
+head(air_data)
+head(plant_data)
+
+
+```
+# Overview of the data 
+```{r , echo=TRUE, warning = FALSE , message=FALSE}
+summary(air_data)
+summary(plant_data)
+
+
+
+```
+## -Air Data: Gives us average AQI and Ozone by hour.
+
+## -Plant Data: Shows how sunlight, temperature, and growth relate.
+
+# Preprocessing the data 
+1. Air Quality Dataset:
+We used drop_na() to remove missing AQI, ozone, and hour values for clarity. This ensures accurate classification of air quality based on safe thresholds.
+
+2. Plant Growth Dataset:
+Similarly, drop_na() was applied to remove incomplete sunlight, temperature, or growth milestone records.
+
+3. Defining "good gardening hours" based on:
+
+-  Safe air quality (AQI <= 100 and Ozone between 0.030 - 0.070 ppm).
+
+-  Optimal plant growth conditions (Sunlight 5-8 hours, Temperature 15-30°C, Growth milestone >= 1).
+
+
+
+# Visual Data Analysis 
+```{r , echo=TRUE, warning = FALSE , message=FALSE}
+
+# Scatter plot: AQI vs 1st Max Hour
+plot(air_data$X1st.Max.Hour, air_data$AQI,
+     main = "Scatter Plot: AQI vs 1st Max Hour",
+     xlab = "Hour of Day (0–23)",
+     ylab = "Air Quality Index (AQI)",
+     pch = 19, col = "blue")
+
+
+```
+
+
+```{r , echo=TRUE, warning = FALSE , message=FALSE}
+# Scatter plot: Arithmetic Mean vs 1st Max Hour
+plot(air_data$X1st.Max.Hour, air_data$Arithmetic.Mean,
+     main = "Scatter Plot: Ozone vs 1st Max Hour",
+     xlab = "Hour of Day (0–23)",
+     ylab = "Ozone (ppm)",
+     pch = 19, col = "green")
+
+
+```
+
+```{r , echo=TRUE, warning = FALSE , message=FALSE}
+# Scatter plot: Sunlight Hours vs Growth Milestone
+plot(plant_data$Sunlight_Hours, plant_data$Growth_Milestone,
+     main = "Scatter Plot: Sunlight Hours vs Growth Milestone",
+     xlab = "Sunlight Hours",
+     ylab = "Growth Milestone",
+     pch = 19, col = "goldenrod")
+
+
+```
+
+```{r , echo=TRUE, warning = FALSE , message=FALSE}
+# Scatter plot: Temperature vs Growth Milestone
+plot(plant_data$Temperature, plant_data$Growth_Milestone,
+     main = "Scatter Plot: Temperature vs Growth Milestone",
+     xlab = "Temperature (°C)",
+     ylab = "Growth Milestone",
+     pch = 19, col = "red")
+
+
+```
+
+# Definig Good Gardening Hours
+
+
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+# Define good gardening time for plants
+plant_data$Good_Gardening_Time <- with(plant_data,
+  Sunlight_Hours >= 5 & Sunlight_Hours <= 8 &
+  Temperature >= 15 & Temperature <= 30 &
+  Growth_Milestone >= 1
+)
+
+# Filter good plant hours
+good_gardening_times <- plant_data[plant_data$Good_Gardening_Time == TRUE, ]
+plant_good_hours <- as.numeric(rownames(good_gardening_times))
+
+
+
+```
+
+# Define good gardening time for gardeners (based on air quality)
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+
+grouped <- air_data %>%
+  group_by(X1st.Max.Hour) %>%
+  summarize(AQI = mean(AQI), Arithmetic.Mean = mean(Arithmetic.Mean))
+
+grouped$Good_for_Gardening <- with(grouped,
+  AQI <= 100 & Arithmetic.Mean >= 0.030 & Arithmetic.Mean <= 0.070
+)
+
+# Filter good gardener hours
+good_hours <- grouped[grouped$Good_for_Gardening == TRUE, ]
+gardener_good_hours <- good_hours$X1st.Max.Hour
+
+```
+
+
+
+# Define good gardening time for gardeners (based on air quality)
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+
+grouped <- air_data %>%
+  group_by(X1st.Max.Hour) %>%
+  summarize(AQI = mean(AQI), Arithmetic.Mean = mean(Arithmetic.Mean))
+
+grouped$Good_for_Gardening <- with(grouped,
+  AQI <= 100 & Arithmetic.Mean >= 0.030 & Arithmetic.Mean <= 0.070
+)
+
+# Filter good gardener hours
+good_hours <- grouped[grouped$Good_for_Gardening == TRUE, ]
+gardener_good_hours <- good_hours$X1st.Max.Hour
+
+```
+
+
+# Define all 24 hours
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+all_hours <- 0:23
+
+# Create label for each hour
+hour_labels <- lapply(all_hours, function(hour) {
+  if (hour %in% plant_good_hours & hour %in% gardener_good_hours) {
+    label <- "Best for Plants and Gardeners"
+  } else if (hour %in% plant_good_hours) {
+    label <- "Good for Plants Only"
+  } else if (hour %in% gardener_good_hours) {
+    label <- "Good for Gardeners Only"
+  } else {
+    label <- "Bad for Both"
+  }
+  data.frame(Hour = hour, Gardening_Quality = label)
+})
+
+# Bind all labels into a table
+hour_table <- do.call(rbind, hour_labels)
+
+# Show the final table
+hour_table
+```
+
+
+# Conclusion 
+This project successfully identifies the best gardening hours based on both plant growth conditions and air quality:
+
+- Best Hours were typically found between mid-morning and early afternoon.
+
+- Bad Hours were more common early morning or late evening when conditions were unfavorable.
+
+- Factors like sunlight, moderate temperature, and clean air together determine optimal gardening time.
+
+This project emphasizes the importance of data cleaning, filtering, and visualization to make practical real-life decisions. Future work can expand this by including humidity, soil quality, or seasonal variations.
+
+# References
+-Air Quality Dataset (daily_44201_2024.csv) :U.S. Environmental Protection Agency
+
+-Plant Growth Dataset (plant_growth_data.csv) Experimental Simulation
+
+
+
+
+
